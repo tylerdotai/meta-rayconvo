@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>RayConvo</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange: #ff6b00;
+      --orange-dim: #cc5500;
+      --black: #0a0a0a;
+      --dark: #111111;
+      --dark-2: #1a1a1a;
+      --dark-3: #242424;
+      --gray: #888888;
+      --light: #f0f0f0;
+      --white: #ffffff;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--black);
+      color: var(--light);
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Layout ─────────────────────────────────────────────── */
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }
+
+    /* ── Header ──────────────────────────────────────────────── */
+    .header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding-bottom: 20px;
+    }
+
+    .logo {
+      width: 56px;
+      height: 56px;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--white);
+    }
+
+    .header p {
+      font-size: 12px;
+      color: var(--gray);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Status ─────────────────────────────────────────────── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 100px;
+      background: var(--dark-2);
+      border: 1px solid var(--dark-3);
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--gray);
+      margin-bottom: 20px;
+      min-height: 36px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--gray);
+      transition: background 0.3s;
+    }
+
+    .status-dot.ready    { background: #22c55e; }
+    .status-dot.listening { background: var(--orange); animation: pulse 1.2s ease-in-out infinite; }
+    .status-dot.processing { background: #eab308; animation: pulse 0.8s ease-in-out infinite; }
+    .status-dot.error    { background: #ef4444; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ── Transcript ──────────────────────────────────────────── */
+    .conversation {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 4px 0;
+      scroll-behavior: smooth;
+    }
+
+    .conversation::-webkit-scrollbar { width: 4px; }
+    .conversation::-webkit-scrollbar-track { background: transparent; }
+    .conversation::-webkit-scrollbar-thumb { background: var(--dark-3); border-radius: 2px; }
+
+    .message {
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.55;
+      max-width: 92%;
+      word-break: break-word;
+    }
+
+    .message.user {
+      background: var(--dark-3);
+      color: var(--light);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.assistant {
+      background: var(--orange);
+      color: var(--black);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      font-weight: 500;
+    }
+
+    .message .role {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.65;
+      font-family: 'JetBrains Mono', monospace;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .message.system {
+      background: transparent;
+      border: 1px solid var(--dark-3);
+      color: var(--gray);
+      font-size: 12px;
+      text-align: center;
+      align-self: center;
+      max-width: 100%;
+    }
+
+    /* ── Controls ────────────────────────────────────────────── */
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding-top: 20px;
+      border-top: 1px solid var(--dark-2);
+      margin-top: 12px;
+    }
+
+    .talk-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: none;
+      background: var(--orange);
+      color: var(--black);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      position: relative;
+      box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4);
+    }
+
+    .talk-btn:active, .talk-btn.listening {
+      transform: scale(0.94);
+      background: var(--orange-dim);
+    }
+
+    .talk-btn.listening {
+      animation: glow 1.2s ease-in-out infinite;
+    }
+
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.5); }
+      50% { box-shadow: 0 0 0 16px rgba(255, 107, 0, 0); }
+    }
+
+    .talk-btn svg {
+      width: 32px;
+      height: 32px;
+      fill: currentColor;
+    }
+
+    .talk-hint {
+      font-size: 11px;
+      color: var(--gray);
+      font-family: 'JetBrains Mono', monospace;
+      text-align: center;
+    }
+
+    /* ── Mic permission ──────────────────────────────────────── */
+    .mic-prompt {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .mic-prompt.hidden { display: none; }
+
+    .mic-prompt-box {
+      background: var(--dark-2);
+      border: 1px solid var(--dark-3);
+      border-radius: 24px;
+      padding: 32px 28px;
+      max-width: 320px;
+      text-align: center;
+    }
+
+    .mic-prompt-box h2 {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .mic-prompt-box p {
+      font-size: 13px;
+      color: var(--gray);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .grant-btn {
+      background: var(--orange);
+      color: var(--black);
+      border: none;
+      padding: 12px 28px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    /* ── Toast ───────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 120px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--dark-3);
+      color: var(--light);
+      padding: 10px 20px;
+      border-radius: 100px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+      z-index: 50;
+      border: 1px solid var(--dark-3);
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── Install banner ──────────────────────────────────────── */
+    .install-banner {
+      background: var(--dark-2);
+      border: 1px solid var(--orange);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 12px;
+      color: var(--gray);
+      text-align: center;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .install-banner.show { display: block; }
+    .install-banner button { background: var(--orange); color: var(--black); border: none; padding: 6px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; margin-left: 8px; font-family: 'Space Grotesk', sans-serif; }
+  </style>
+</head>
+<body>
+
+  <!-- Mic permission prompt -->
+  <div class="mic-prompt" id="micPrompt">
+    <div class="mic-prompt-box">
+      <h2>🎙️ Mic Access Needed</h2>
+      <p>RayConvo needs your microphone to hear you. Audio is processed locally and never leaves your device without your permission.</p>
+      <button class="grant-btn" id="grantMic">Allow Microphone</button>
+    </div>
+  </div>
+
+  <div class="app">
+    <!-- Header -->
+    <div class="header">
+      <img class="logo" src="/logo.svg" alt="RayConvo" />
+      <h1>RayConvo</h1>
+      <p>your AI, in your ear.</p>
+    </div>
+
+    <!-- Install banner -->
+    <div class="install-banner" id="installBanner">
+      Add to home screen for the best experience
+      <button id="installBtn">Install</button>
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Initializing...</span>
+    </div>
+
+    <!-- Conversation history -->
+    <div class="conversation" id="conversation">
+      <div class="message system">Tap the button and talk. I'll respond in voice.</div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="talk-btn" id="talkBtn" aria-label="Hold to talk">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1 1.93c-3.94-.49-7-3.85-7-7.93h2c0 3.31 2.69 6 6 6s6-2.69 6-6h2c0 4.08-3.06 7.44-7 7.93V19h4v2H8v-2h4v-3.07z"/>
+        </svg>
+      </button>
+      <span class="talk-hint">tap &amp; hold to talk</span>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    const conversation = document.getElementById('conversation');
+    const talkBtn = document.getElementById('talkBtn');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const micPrompt = document.getElementById('micPrompt');
+    const grantMic = document.getElementById('grantMic');
+    const toastEl = document.getElementById('toast');
+    const installBanner = document.getElementById('installBanner');
+    const installBtn = document.getElementById('installBtn');
+
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
+    let micStream = null;
+    let deferredPrompt = null;
+
+    // ── PWA Install ───────────────────────────────────────────────────────────
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBanner.classList.add('show');
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') installBanner.classList.remove('show');
+      deferredPrompt = null;
+    });
+
+    // ── Mic permission ──────────────────────────────────────────────────────
+    async function initMic() {
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            sampleRate: 16000,
+            echoCancellation: true,
+            noiseSuppression: true,
+          }
+        });
+        micPrompt.classList.add('hidden');
+        setStatus('ready', 'Ready — tap & hold to talk');
+      } catch (err) {
+        console.error('[Mic]', err);
+        setStatus('error', 'Mic access denied');
+        showToast('Microphone access is required');
+      }
+    }
+
+    grantMic.addEventListener('click', initMic);
+
+    // Auto-init on load
+    initMic();
+
+    // ── Status helper ─────────────────────────────────────────────────────────
+    function setStatus(state, text) {
+      statusDot.className = 'status-dot ' + state;
+      statusText.textContent = text;
+    }
+
+    // ── Toast helper ──────────────────────────────────────────────────────────
+    let toastTimeout;
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => toastEl.classList.remove('show'), 3000);
+    }
+
+    // ── Conversation UI ──────────────────────────────────────────────────────
+    function addMessage(role, text) {
+      // Remove the intro message on first real exchange
+      const intro = conversation.querySelector('.message.system');
+      if (intro) intro.remove();
+
+      const el = document.createElement('div');
+      el.className = `message ${role}`;
+      const label = role === 'user' ? 'You' : 'Dexter';
+      el.innerHTML = `<span class="role">${label}</span>${escapeHtml(text)}`;
+      conversation.appendChild(el);
+      conversation.scrollTop = conversation.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Audio Recording ───────────────────────────────────────────────────────
+    function startRecording() {
+      if (!micStream || isRecording) return;
+      audioChunks = [];
+      // Use the mic stream directly with MediaRecorder
+      const opts = { mimeType: 'audio/webm;codecs=opus' };
+      if (!MediaRecorder.isTypeSupported(opts.mimeType)) {
+        opts.mimeType = 'audio/webm';
+      }
+      mediaRecorder = new MediaRecorder(micStream, opts);
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunks.push(e.data);
+      };
+      mediaRecorder.start(100); // chunk every 100ms for streaming feel
+      isRecording = true;
+      talkBtn.classList.add('listening');
+      setStatus('listening', 'Listening...');
+    }
+
+    async function stopRecording() {
+      if (!isRecording || !mediaRecorder) return;
+      isRecording = false;
+      talkBtn.classList.remove('listening');
+      setStatus('processing', 'Processing...');
+
+      return new Promise((resolve) => {
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          audioChunks = [];
+          try {
+            await sendAudio(blob);
+          } finally {
+            resolve(null);
+          }
+        };
+        mediaRecorder.stop();
+      });
+    }
+
+    async function sendAudio(blob) {
+      const formData = new FormData();
+      formData.append('audio', blob, 'recording.webm');
+
+      try {
+        const res = await fetch(`${API_BASE}/api/audio`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+
+        const data = await res.json();
+
+        if (data.error) throw new Error(data.error);
+
+        addMessage('user', data.text);
+        addMessage('assistant', data.responseText);
+
+        if (data.audioUrl) {
+          const audio = new Audio(`${API_BASE}${data.audioUrl}`);
+          audio.oncanplay = () => {
+            setStatus('speaking', 'Speaking...');
+            audio.play().catch(console.error);
+          };
+          audio.onended = () => setStatus('ready', 'Ready');
+          audio.onerror = () => setStatus('ready', 'Ready');
+        } else {
+          setStatus('ready', 'Ready');
+        }
+      } catch (err) {
+        console.error('[SendAudio]', err);
+        setStatus('error', 'Error — tap to retry');
+        showToast('Failed to send audio. Try again.');
+      }
+    }
+
+    // ── Button events ─────────────────────────────────────────────────────────
+    talkBtn.addEventListener('mousedown', startRecording);
+    talkBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRecording(); }, { passive: false });
+    talkBtn.addEventListener('mouseup', stopRecording);
+    talkBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopRecording(); });
+    talkBtn.addEventListener('mouseleave', () => { if (isRecording) stopRecording(); });
+
+    // ── Register service worker ───────────────────────────────────────────────
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(console.error);
+    }
+  </script>
+</body>
+</html>

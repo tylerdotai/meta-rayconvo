@@ -1,0 +1,33 @@
+{
+  "name": "meta-rayconvo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Voice bridge between Meta Ray-Ban glasses and OpenClaw AI",
+  "scripts": {
+    "dev": "tsx watch src/backend/server.ts",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx,.js,.jsx --max-warnings 0",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "preview": "node dist/backend/server.js",
+    "setup": "bash scripts/setup-piper.sh"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.14",
+    "hono": "^4.7.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.13.14",
+    "@typescript-eslint/eslint-plugin": "^8.58.2",
+    "@typescript-eslint/parser": "^8.58.2",
+    "eslint": "^10.2.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^4.1.4"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
