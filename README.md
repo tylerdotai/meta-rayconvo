@@ -47,7 +47,7 @@ make dev        # Development with hot reload (tsx)
 make docker-up  # Production via Docker
 ```
 
-Backend runs at `http://localhost:3001`.
+Backend runs at `http://localhost:3010` (configurable via `PORT`).
 
 ### 4. Open the PWA
 

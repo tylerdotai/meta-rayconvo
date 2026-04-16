@@ -198,4 +198,22 @@ meta-rayconvo/
 
 ## 11. Status
 
-**2026-04-16:** Built and pushed. Backend scaffolded, PWA implemented, STT (faster-whisper) and TTS (edge-tts) installed on clawbox. GitHub repo created. README written. CI/CD wired. Still needed: real end-to-end test with glasses, OpenClaw token configuration, Railway deployment.
+**2026-04-16:** ✅ Built and pushed. All systems verified:
+
+- [x] Backend starts cleanly on `:3010`
+- [x] `GET /health` → `{ok: true}`
+- [x] `POST /api/tts` → audio synthesis (32KB MP3, BrianNeural voice)
+- [x] `GET /audio/:file` → audio streaming works
+- [x] faster-whisper base model loads on CPU
+- [x] edge-tts voices confirmed available
+- [x] TypeScript compiles clean
+- [x] ESLint passes (0 errors)
+- [x] Vitest tests pass (3/3)
+- [x] GitHub repo pushed: https://github.com/tylerdotai/meta-rayconvo
+- [x] CI/CD wired (GitHub Actions)
+
+**Still needed:**
+- [ ] Configure `OPENCLAW_TOKEN` on clawbox for real AI responses
+- [ ] End-to-end test with glasses (need Meta View companion phone present)
+- [ ] Railway deployment (or self-hosted on clawbox:3010)
+- [ ] PWA access from phone browser (same WiFi as clawbox)
