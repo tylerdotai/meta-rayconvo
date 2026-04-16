@@ -23,7 +23,7 @@ const app = new Hono();
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const PORT      = parseInt(process.env.PORT || '3001');
+const PORT      = parseInt(process.env.PORT || '3010');
 const GATEWAY   = process.env.OPENCLAW_GATEWAY || 'http://127.0.0.1:18789';
 const TOKEN     = process.env.OPENCLAW_TOKEN     || '';
 const SESSION   = process.env.OPENCLAW_SESSION    || 'main';
@@ -34,10 +34,16 @@ const AUDIO_DIR = path.join(TMP_DIR, 'audio');
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 
-await mkdir(AUDIO_DIR, { recursive: true });
-console.log(`[RayConvo] Starting on :${PORT}`);
-console.log(`[RayConvo] OpenClaw: ${GATEWAY} session=${SESSION}`);
-console.log(`[RayConvo] TTS: ${TTS_VOICE}`);
+// ─── Init (wrapped in async IIFE for CJS compat) ────────────────────────────
+
+async function init() {
+  await mkdir(AUDIO_DIR, { recursive: true });
+  console.log(`[RayConvo] Starting on :${PORT}`);
+  console.log(`[RayConvo] OpenClaw: ${GATEWAY} session=${SESSION}`);
+  console.log(`[RayConvo] TTS: ${TTS_VOICE}`);
+}
+
+init();
 
 // ─── STT — faster-whisper via Python subprocess ──────────────────────────────
 
